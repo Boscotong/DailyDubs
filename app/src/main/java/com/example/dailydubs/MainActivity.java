@@ -4,11 +4,18 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import io.realm.Realm;
+import io.realm.mongodb.App;
+import io.realm.mongodb.AppConfiguration;
+import io.realm.mongodb.Credentials;
+import io.realm.mongodb.User;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -21,12 +28,47 @@ public class MainActivity extends AppCompatActivity {
     private String password = "123456789";
     private int counter = 5;
 
+    private App app;
+
+    public static final String APPID = "dailydubs-acrem";
+
     private boolean isValid = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Setting up Realm
+        Realm.init(this);
+        app = new App(new AppConfiguration.Builder(APPID).build());
+
+        /*
+        // Login mechanics
+        Credentials credentials = Credentials.emailPassword("mrsaladddd@gmail.com", "123456");
+        app.loginAsync(credentials , new App.Callback<User>() {
+            @Override
+            public void onResult(App.Result<User> result) {
+                if(result.isSuccess()) {
+                    Log.v("user", "Logged in succesfully");
+                } else {
+                    Log.v("user", "Failed to login");
+                }
+            }
+        });
+        */
+
+
+        /*
+        // Signup mechanics
+        app.getEmailPassword().registerUserAsync("mrsaladddd@gmail.com", "123456", it->{
+           if (it.isSuccess()) {
+               Log.v("user", "Email registered successfully");
+           } else {
+               Log.v("user", "Email registration failed");
+           }
+        });
+        */
 
         eUsername = findViewById(R.id.etUsername);
         ePassword = findViewById(R.id.etPassword);
@@ -45,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
                 if(inputName.isEmpty() || inputPassword.isEmpty()) {
                     Toast.makeText(MainActivity.this, "Please try again", Toast.LENGTH_SHORT).show();
                 } else {
-                    isValid = validateCredential(inputPassword, inputName);
+                    validateCredential(inputPassword, inputName, app);
 
                     if(!isValid) {
                         // if the credential is false
@@ -64,7 +106,8 @@ public class MainActivity extends AppCompatActivity {
 
                         // Reset the counter
                         counter = 5;
-
+                        // Reset isValid
+                        isValid = false;
                         // Go to a new activity
                         Intent intent = new Intent(MainActivity.this, HomePage.class);
                         startActivity(intent);
@@ -74,10 +117,25 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private boolean validateCredential(String password, String username) {
+    private void validateCredential(String password, String username, App app) {
+        Credentials credentials = Credentials.emailPassword(username, password);
+        app.loginAsync(credentials, new App.Callback<User>() {
+            @Override
+            public void onResult(App.Result<User> result) {
+                if (result.isSuccess()) {
+                    Log.v("user", "Logged in successfully");
+                    isValid = true;
+                } else {
+                    Log.v("user", "Failed to login");
+                    isValid = false;
+                }
+            }
+        });
+        /*
         if (this.username.equals(username) && this.password.equals(password)) {
             return true;
         }
         return false;
+        */
     }
 }
